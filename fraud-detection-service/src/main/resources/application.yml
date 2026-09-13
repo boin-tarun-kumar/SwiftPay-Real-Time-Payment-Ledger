@@ -1,0 +1,194 @@
+server:
+  port: ${SERVER_PORT:8083}
+
+spring:
+
+  application:
+    name: swiftpay-fraud-detection-service
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://postgres:5432/swiftpay}
+    username: ${DB_USERNAME:swiftpay}
+    password: ${DB_PASSWORD:swiftpay}
+    driver-class-name: org.postgresql.Driver
+
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+      minimum-idle: ${DB_MIN_IDLE:2}
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+    open-in-view: false
+
+    properties:
+      hibernate:
+        format_sql: false
+        jdbc:
+          time_zone: UTC
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  kafka:
+
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP:fraud-detection-group}
+
+      auto-offset-reset: earliest
+
+      enable-auto-commit: false
+
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+
+      properties:
+        spring.json.trusted.packages: "com.swiftpay.common.event,com.swiftpay.common.enums"
+
+        spring.json.use.type.headers: true
+
+        spring.json.value.default.type: com.swiftpay.common.event.PaymentInitiatedEvent
+
+      max-poll-records: 100
+
+      properties:
+        max.poll.interval.ms: 300000
+        session.timeout.ms: 15000
+        heartbeat.interval.ms: 5000
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+      acks: all
+
+      retries: 5
+
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+        delivery.timeout.ms: 120000
+        request.timeout.ms: 30000
+
+  data:
+
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: ${REDIS_TIMEOUT:2000ms}
+
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 2
+          max-wait: 1000ms
+
+
+# ============================================================
+# SwiftPay Fraud Configuration
+# ============================================================
+
+swiftpay:
+
+  kafka:
+
+    topics:
+      payment-initiated: ${PAYMENT_INITIATED_TOPIC:payment-initiated}
+
+      fraud-result: ${FRAUD_RESULT_TOPIC:fraud-check-result}
+
+  fraud:
+
+    rules:
+
+      high-amount-threshold: ${FRAUD_HIGH_AMOUNT_THRESHOLD:100000}
+
+      medium-amount-threshold: ${FRAUD_MEDIUM_AMOUNT_THRESHOLD:50000}
+
+      high-velocity-threshold: ${FRAUD_HIGH_VELOCITY_THRESHOLD:5}
+
+      medium-velocity-threshold: ${FRAUD_MEDIUM_VELOCITY_THRESHOLD:3}
+
+      velocity-window-seconds: ${FRAUD_VELOCITY_WINDOW_SECONDS:60}
+
+      receiver-history-days: ${FRAUD_RECEIVER_HISTORY_DAYS:30}
+
+    risk:
+
+      medium-threshold: ${FRAUD_MEDIUM_RISK_SCORE:40}
+
+      high-threshold: ${FRAUD_HIGH_RISK_SCORE:70}
+
+      maximum-score: ${FRAUD_MAX_RISK_SCORE:100}
+
+
+# ============================================================
+# Actuator
+# ============================================================
+
+management:
+
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+
+  endpoint:
+    health:
+      show-details: when_authorized
+
+  health:
+    probes:
+      enabled: true
+
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+
+# ============================================================
+# OpenAPI
+# ============================================================
+
+springdoc:
+
+  api-docs:
+    path: /v3/api-docs
+
+  swagger-ui:
+    path: /swagger-ui.html
+
+    operations-sorter: method
+
+    tags-sorter: alpha
+
+
+# ============================================================
+# Logging
+# ============================================================
+
+logging:
+
+  level:
+
+    root: INFO
+
+    com.swiftpay.fraud: INFO
+
+    org.springframework.kafka: INFO
+
+    org.springframework.data.redis: INFO
+
+    org.hibernate.SQL: WARN

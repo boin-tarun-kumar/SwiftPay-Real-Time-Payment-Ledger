@@ -37,6 +37,7 @@ class LedgerServiceTest {
     @Test
     void shouldInitializeService() {
 
+        @SuppressWarnings("unused")
         PaymentInitiatedEvent event =
                 new PaymentInitiatedEvent();
 

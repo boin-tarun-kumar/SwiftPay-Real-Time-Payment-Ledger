@@ -34,10 +34,12 @@ class PaymentControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
+    @SuppressWarnings("removal")
+@MockBean
     private PaymentService paymentService;
 
-    @Test
+    @SuppressWarnings("null")
+@Test
     void shouldCreatePaymentSuccessfully()
             throws Exception {
 

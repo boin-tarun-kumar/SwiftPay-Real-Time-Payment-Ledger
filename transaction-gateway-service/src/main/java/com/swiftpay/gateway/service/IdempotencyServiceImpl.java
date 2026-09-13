@@ -29,7 +29,8 @@ public class IdempotencyServiceImpl
         );
     }
 
-    @Override
+    @SuppressWarnings("null")
+@Override
     public void saveTransaction(
             String transactionId
     ) {

@@ -49,7 +49,8 @@ public class KafkaProducerConfig {
         );
     }
 
-    @Bean
+    @SuppressWarnings("null")
+@Bean
     public KafkaTemplate<String, Object>
     kafkaTemplate() {
 
